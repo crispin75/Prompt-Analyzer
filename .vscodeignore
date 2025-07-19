@@ -1,0 +1,14 @@
+# Exclude source, config, and dev files from VSIX
+src/
+test/
+*.ts
+*.map
+.gitignore
+.vscode/
+*.log
+*.md
+*.json
+!out/
+!package.json
+!README.md
+!LICENSE*
