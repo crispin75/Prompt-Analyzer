@@ -1,7 +1,6 @@
 
-import * as vscode from 'vscode';
 
-// Regexes for normalization
+import * as vscode from 'vscode';
 const HEADING_RE = /^\s{0,3}#/;
 const PLACEHOLDER_RE = /\{[{]?[A-Za-z0-9_:-]+[}]?}/g;
 const EMPHASIS_RE = /(\*\*|__|`)/g;
@@ -60,7 +59,6 @@ interface LineData {
 }
 
 function simpleCompressLen(s: string): number {
-    // Simple RLE as a proxy for compression (not real gzip, but fast and deterministic)
     if (!s) return 0;
     let last = s[0], count = 1, out = '';
     for (let i = 1; i < s.length; ++i) {
@@ -75,7 +73,6 @@ function simpleCompressLen(s: string): number {
 }
 
 function countSteps(line: string): number {
-    // Count explicit reasoning steps (e.g., "Step 1:", "Step 2:", "First, Second, Third")
     const stepRegex = /(step\s*\d+|first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)/gi;
     return (line.match(stepRegex) || []).length;
 }
@@ -90,14 +87,10 @@ function computeMetrics(lines: string[]): LineData[] {
         const avgTokenLen = tokenLens.length ? tokenLens.reduce((a,b)=>a+b,0)/tokenLens.length : 0;
         const symbolDensity = norm.length ? (norm.replace(/\w|\s/g,'').length / norm.length) : 0;
         const caseSwitch = caseSwitchRate(norm);
-        // Kolmogorov complexity proxy: compression ratio
         const compressedLen = simpleCompressLen(norm);
         const compressionRatio = norm.length ? compressedLen / norm.length : 0;
-        // MDL proxy: bits per char (using entropy)
         const mdlBitsPerChar = entropy;
-        // Chain-of-thought step count
         const stepCount = countSteps(norm);
-        // Periodicity/positional bias: every 64th line
         const periodicityBias = ((idx+1) % 64 === 0);
         return {
             raw, norm, entropy, avgTokenLen,
@@ -108,49 +101,29 @@ function computeMetrics(lines: string[]): LineData[] {
         };
     });
 
-    // Baseline-based flagging: compute per-metric mean/stdev, flag outliers
 
-    // Helper: quantile
-    function quantile(arr: number[], q: number) {
-        if (!arr.length) return 0;
-        const sorted = [...arr].sort((a,b)=>a-b);
-        const pos = Math.floor((1-q)*sorted.length);
-        return sorted[pos];
-    }
 
-    // Gather arrays for each metric
-    const entropies = data.map(d=>d.entropy);
-    const avgTokenLens = data.map(d=>d.avgTokenLen);
-    const symbolDensities = data.map(d=>d.symbolDensity);
-    const compressionRatios = data.map(d=>d.compressionRatio);
-    const mdlBits = data.map(d=>d.mdlBitsPerChar);
-
-    // Use static thresholds for each metric (no forced quantile-based flagging)
-    const entropyThresh = 4.3; // Slightly lower to catch more entropy cases
-    const avgTokenLenThresh = 11.0; // Slightly lower to catch more long token cases
-    const symbolDensityThresh = 0.28; // Slightly lower to catch more symbol noise
-    const compressThresh = 0.92; // Much higher to reduce compress_high false positives
-    const mdlThresh = 4.3; // Slightly lower to catch more MDL cases
+    const entropyThresh = 4.3;
+    const avgTokenLenThresh = 11.0;
+    const symbolDensityThresh = 0.28;
+    const compressThresh = 0.92;
+    const mdlThresh = 4.3;
 
     data.forEach((d, i) => {
         const tokens = d.norm.match(/\w+/g) || [];
         const tokenCount = tokens.length;
         if (tokenCount < 4 || HEADING_RE.test(d.raw)) return;
 
-        // Quantile-based flagging (top 25% for each metric)
         const entropyHigh = d.entropy >= entropyThresh;
         const longTokens = d.avgTokenLen >= avgTokenLenThresh;
         const symbolNoise = d.symbolDensity >= symbolDensityThresh;
         const uniqHigh = tokenCount >= 15 && d.uniqRatio > 0.98;
-        // entropy jump (use 1.5 as static threshold)
         const prev = data[i-1];
         const entropyJump = prev && prev.raw.trim() !== '' && (d.entropy - prev.entropy) > 1.5;
-
-        // New metrics (quantile)
         const compressHigh = d.compressionRatio >= compressThresh;
         const mdlHigh = d.mdlBitsPerChar >= mdlThresh;
-        const stepExcess = d.stepCount > Math.ceil(Math.sqrt(tokenCount) * Math.log2(10)); // proxy for k* formula
-        const periodicityFlag = d.periodicityBias; // fires if line number is 64, 128, ...
+        const stepExcess = d.stepCount > Math.ceil(Math.sqrt(tokenCount) * Math.log2(10));
+        const periodicityFlag = d.periodicityBias;
 
         const coreFlags = [
             entropyHigh && 'entropy_high',
@@ -185,14 +158,13 @@ function publishDiagnostics(doc: vscode.TextDocument, data: LineData[], collecti
     const diags: vscode.Diagnostic[] = [];
     data.forEach((d, idx) => {
         if (!d.severity) return;
-        if (d.severity === 'INFO') return; // suppress
-        if (d.score < 1.0 && d.severity === 'WARN') return; // extra guard
+        if (d.severity === 'INFO') return;
+        if (d.score < 1.0 && d.severity === 'WARN') return;
 
         const start = new vscode.Position(idx, 0);
         const end = new vscode.Position(idx, d.raw.length);
         const sev = d.severity === 'HIGH' ? vscode.DiagnosticSeverity.Error : vscode.DiagnosticSeverity.Warning;
 
-        // Detailed suggestions for all triggered metrics
         const metricDetails: Record<string, {name: string, explanation: string, exampleProblem: string, exampleSolution: string}> = {
             entropy_high: {
                 name: 'entropy_high',
@@ -259,7 +231,6 @@ function publishDiagnostics(doc: vscode.TextDocument, data: LineData[], collecti
         const details: string[] = d.issues.map(issue => {
             const det = metricDetails[issue];
             if (!det) return '';
-            // Show metric name in brackets and uppercase for visibility
             return `[${det.name.toUpperCase()}]: ${det.explanation}\n  Problem: ${det.exampleProblem}\n  Solution: ${det.exampleSolution}`;
         }).filter(Boolean);
 
@@ -275,7 +246,6 @@ export function activate(context: vscode.ExtensionContext) {
     const diagCollection = vscode.languages.createDiagnosticCollection('promptAnalyzer');
 
     function analyzeAndPublish(document: vscode.TextDocument) {
-        // Accept plaintext, markdown, text, and yaml files
         if (
             document.languageId !== 'plaintext' &&
             document.languageId !== 'markdown' &&
