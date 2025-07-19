@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Prompt Analyzer VS Code Extension
 
 Analyze prompt files for complexity and risk directly in VS Code. This extension highlights lines with high entropy, symbol noise, long tokens, and other metrics that may cause issues for LLMs (Large Language Models).
@@ -48,3 +49,6 @@ Each metric is used to flag lines that may be risky or problematic for LLMs, wit
 
 ## License
 MIT
+=======
+# Prompt-Analyzer
+>>>>>>> 3eebdaddcdf8a0b6e640273ec1f938ee0d0a665f
