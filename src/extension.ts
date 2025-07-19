@@ -129,12 +129,12 @@ function computeMetrics(lines: string[]): LineData[] {
             symbolNoise && 'symbol_noise',
             compressHigh && 'compress_high',
             mdlHigh && 'mdl_high',
+            periodicityFlag && 'periodicity_bias',
         ].filter(Boolean) as string[];
         const auxFlags = [
             uniqHigh && 'uniq_high',
             entropyJump && 'entropy_jump',
             stepExcess && 'step_excess',
-            periodicityFlag && 'periodicity_bias',
         ].filter(Boolean) as string[];
 
 
