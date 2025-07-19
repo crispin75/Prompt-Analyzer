@@ -48,5 +48,3 @@ Each metric is used to flag lines that may be risky or problematic for LLMs, wit
 
 ## License
 MIT
-=======
-# Prompt-Analyzer
