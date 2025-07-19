@@ -2,6 +2,10 @@
 
 Analyze prompt files for complexity and risk directly in VS Code. This extension highlights lines with high entropy, symbol noise, long tokens, and other metrics that may cause issues for LLMs (Large Language Models).
 
+Small test inspired by the linkedin post of @leochlon: 
+https://www.linkedin.com/posts/leochlon_ai-machinelearning-informationtheory-activity-7351636693596139521-RSuy
+and the work of their group: https://arxiv.org/abs/2507.11768 
+
 
 ## Features
 - Inline diagnostics for risky prompt lines
