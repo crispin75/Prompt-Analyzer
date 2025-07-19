@@ -3,7 +3,7 @@
   "publisher": "CierzoDevlopment","displayName": "Prompt Analyzer",
   "Publisher ID": "CierzoDevlopment",
   "description": "Analyzes prompts open in the editor and marks inline hints for risky lines based on entropy and other metrics.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": ">=1.70.0"
   },
