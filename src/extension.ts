@@ -101,8 +101,6 @@ function computeMetrics(lines: string[]): LineData[] {
         };
     });
 
-
-
     const entropyThresh = 4.3;
     const avgTokenLenThresh = 11.0;
     const symbolDensityThresh = 0.28;
@@ -139,7 +137,9 @@ function computeMetrics(lines: string[]): LineData[] {
             periodicityFlag && 'periodicity_bias',
         ].filter(Boolean) as string[];
 
-        const numCore = coreFlags.length;
+
+        // Count auxFlags as half for severity calculation
+        const numCore = coreFlags.length + 0.5 * auxFlags.length;
         let severity: LineData['severity'];
         if (numCore >= 1) {
             severity = (numCore >= 3) ? 'HIGH' : 'WARN';
